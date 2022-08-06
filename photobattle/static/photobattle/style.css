@@ -1,0 +1,31 @@
+h1,
+h2,
+h3,
+h4,
+h5 {
+    font-family: "Cormorant Garamond", serif;
+    margin: .6em 0;
+    color: white;
+}
+
+.photo-wrapper.hint {
+    opacity: .5;
+}
+
+.photo-wrapper.active {
+    opacity: .2;
+}
+
+.modal.modal-xl .modal-container {
+    max-width: 1280px;
+}
+
+/*
+.grid-item {
+    width: 32%;
+}
+*/
+
+.preview-container {
+    z-index: 300;
+}

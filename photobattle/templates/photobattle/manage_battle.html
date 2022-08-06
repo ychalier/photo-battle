@@ -1,0 +1,163 @@
+{% extends "photobattle/base.html" %}
+
+{% block title %}{{ battle.title }}{% endblock %}
+
+{% block main_content %}
+
+<h1>{{ battle.title }}</h1>
+
+<p class="btn-blocks">
+    <a class="btn" href="{% url 'photobattle:view_battle' battle.code %}">Voir</a>
+    <a class="btn" href="{% url 'admin:photobattle_battle_change' battle.id %}">Admin</a>
+</p>
+
+<h2>État</h2>
+
+<p>
+    État actuel : <b>{{ battle.get_state_display }}</b>
+</p>
+
+{% if next_state_value and next_state_display %}
+<form method="post" action="" class="my-4">
+    {% csrf_token %}
+    <input hidden name="action" value="change_state" />
+    <input hidden name="state" value="{{ next_state_value }}" />
+    <button class="btn btn-primary">Passer à l'état suivant ({{ next_state_display }})</button>
+</form>
+{% endif %}
+
+<h2>Équipes</h2>
+
+{% if battle.teams.count %}
+<ul>
+{% for team in battle.teams.all %}
+<li>{{ team.name }} <form class="d-inline ml-4" method="post" action="">{% csrf_token %}<input type="hidden" name="action" value="remove_team"/><input type="hidden" name="team" value="{{ team.id }}"/><button class="btn btn-action"><i class="icon icon-delete"></i></button></form></li>
+{% endfor %}
+</ul>
+{% else %}
+<div class="empty">
+    <div class="empty-icon">
+        <i class="icon icon-people"></i>
+    </div>
+    <p class="empty-title h5">Aucune équipe inscrite</p>
+  </div>
+{% endif %}
+
+<form method="post" action="" class="my-4">
+    {% csrf_token %}
+    <input hidden name="action" value="create_team" />
+    <div class="input-group">
+        <input class="form-input" type="text" name="team" placeholder="Les petits pédestres" />
+        <input class="btn btn-primary input-group-btn" type="submit" value="Créer l'équipe" />
+    </div>
+</form>
+
+<form method="post" action="" class="my-4">
+    {% csrf_token %}
+    <input type="text" hidden name="action" value="register_team" />
+    <div class="input-group">
+        <select class="form-select" name="team">
+            {% for team in teams %}
+            <option value="{{ team.id }}">{{ team.name }}</option>
+            {% endfor %}
+        </select>
+        <input class="btn btn-primary input-group-btn" type="submit" value="Inscrire" />
+    </div>
+</form>
+
+<h2>Photos</h2>
+
+{% if battle.photos.count %}
+
+{% for team, photos in battle.photos_by_team.items %}
+<h5>{{ team.name }} ({{ photos | length }}/{{ battle.photo_count }})</h5>
+<p>
+    {% if photos %}
+    {% for photo in photos %}
+    <div class="popover">
+        <a href="{{ photo.url }}"><img src="{{ photo.url_thumbnail }}" /></a>
+        <div class="popover-container">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Partagée le {{ photo.date_creation | date }} à {{ photo.date_creation | time }}.{% if photo.grade %}<br>Évalutation : {{ photo.grade }}{% endif %}</div>
+                </div>
+                <div class="card-footer">
+                    <form method="post" action="">
+                        {% csrf_token %}
+                        <input hidden name="action" value="delete_photo" />
+                        <input hidden name="photo" value="{{ photo.id }}" />
+                        <button class="btn btn-primary">Supprimer</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <span class="text-gray">Aucune photo n'a encore été partagée.</span>
+    {% endif %}
+</p>
+{% endfor %}
+
+{% else %}
+<div class="empty">
+    <div class="empty-icon">
+        <i class="icon icon-photo"></i>
+    </div>
+    <p class="empty-title h5">Aucune photo partagée</p>
+  </div>
+{% endif %}
+
+<h2>Votes</h2>
+
+{% if battle.votes.count %}
+<table class="table table-hover table-striped">
+<thead>
+    <tr>
+        <th>Équipe</th>
+        <th>Date</th>
+        <th>Classement</th>
+        <th>Action</th>
+    </tr>
+</thead>
+<tbody>
+    {% for vote in battle.votes.all %}
+    <tr>
+        <td>{{ vote.team.name }}</td>
+        <td>{{ vote.date_creation }}</td>
+        <td>{{ vote.ranking }}</td>
+        <td><form class="d-inline" action="" method="post">{% csrf_token %}<input hidden name="action" value="delete_vote" /><input hidden name="vote" value="{{ vote.id }}" /><button title="Supprimer ce vote" class="btn btn-action"><i class="icon icon-delete"></i></button></form></td>
+    </tr>
+    {% endfor %}
+</tbody>
+</table>
+
+{% else %}
+<div class="empty">
+    <div class="empty-icon">
+        <i class="icon icon-post"></i>
+    </div>
+    <p class="empty-title h5">Aucun vote émis</p>
+  </div>
+{% endif %}
+
+<h2>Résultats</h2>
+
+{% if battle.results.count %}
+<ul>
+{% for result in battle.results.all %}
+<li>{{ result }}</li>
+{% endfor %}
+</ul>
+{% else %}
+<div class="empty">
+    <div class="empty-icon">
+        <i class="icon icon-trophy"></i>
+    </div>
+    <p class="empty-title h5">Aucun résultat calculé</p>
+  </div>
+{% endif %}
+
+<br>
+
+{% endblock main_content %}

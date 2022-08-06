@@ -1,0 +1,196 @@
+{% extends "photobattle/base.html" %}
+{% load static %}
+
+
+{% block title %}{{ battle.title }}{% endblock %}
+
+{% block head %}
+{{ block.super }}
+<script src="{% static 'photobattle/preview.js' %}"></script>
+{% endblock head %}
+
+{% block main_content %}
+
+<h1>{{ battle.title }}</h1>
+
+<p>
+    {% if battle.state == 'I' %}
+    Les inscriptions sont ouvertes !
+    {% elif battle.state == 'U' %}
+    <button class="btn btn-primary" onclick="showModal('modal-upload')">Partager une photo</button>
+    {% elif battle.state == 'V' %}
+    <button class="btn btn-primary" onclick="showModal('modal-vote-team')">Voter</button>
+    {% elif battle.state == 'C' %}
+    Ce concours est terminé.
+    {% endif %}
+    {% if is_owner %}&nbsp;<a href="{% url 'photobattle:manage_battle' battle.code %}">Gérer</a>{% endif %}
+</p>
+
+{% if battle.state == "I" %}
+
+    <h2>Équipes</h2>
+
+    {% if battle.teams.count %}
+    <ul>
+    {% for team in battle.teams.all %}
+    <li>{{ team.name }}</li>
+    {% endfor %}
+    </ul>
+    {% else %}
+    <div class="empty">
+        <div class="empty-icon">
+            <i class="icon icon-people icon-2x"></i>
+        </div>
+        <p class="empty-title">Aucune équipe inscrite</p>
+    </div>
+    {% endif %}
+
+{% elif battle.state == "U" %}
+
+{% for team, photos in battle.photos_by_team.items %}
+<h5>{{ team.name }} ({{ photos | length }}/{{ battle.photo_count }})</h5>
+<p>
+    {% if photos %}
+    {% for photo in photos %}
+    <img src="{% static 'photobattle/dummy_image.jpg' %}" />
+    {% endfor %}
+    {% else %}
+    <span class="text-gray">Aucune photo n'a encore été partagée.</span>
+    {% endif %}
+</p>
+{% endfor %}
+
+{% elif battle.state == "V" %}
+
+<p>
+    {% for photo in battle.photos_shuffled %}
+    <a href="{{ photo.url }}" class="preview" preview-img="{{ photo.url }}"><img src="{{ photo.url_thumbnail }}" /></a>
+    {% endfor %}
+</p>
+
+<p>
+    Vote{{ battle.votes.count | pluralize }} reçu{{ battle.votes.count | pluralize }} : <span>{{ battle.votes.count }}</span>
+</p>
+
+{% elif battle.state == "C" %}
+
+<h2>Classement</h2>
+
+{% for result in battle.results.all %}
+{% if result.rank == 1 %}
+<i class="icon icon-trophy" style="color: gold"></i>
+{% elif result.rank == 2%}
+<i class="icon icon-trophy" style="color: silver"></i>
+{% elif result.rank == 3%}
+<i class="icon icon-trophy" style="color: #A77044"></i>
+{% endif %}
+&nbsp;
+{{ result.team.name }}
+<br>
+{% endfor %}
+
+<h2>Photos</h2>
+
+<p class="grid">
+    {% for photo in battle.photos_ranked %}
+    <a href="{{ photo.url }}" class="tooltip preview" preview-img="{{ photo.url }}" data-tooltip="{{ photo.team.name }} {% if photo.grade_scaled >= 1 %}★{% else %}☆{% endif %}{% if photo.grade_scaled >= 2 %}★{% else %}☆{% endif %}{% if photo.grade_scaled >= 3 %}★{% else %}☆{% endif %}{% if photo.grade_scaled >= 4 %}★{% else %}☆{% endif %}{% if photo.grade_scaled >= 5 %}★{% else %}☆{% endif %}"><img src="{{ photo.url_thumbnail }}" /></a>
+    {% endfor %}
+</p>
+
+{% endif %}
+
+<div class="modal" id="modal-upload">
+    <span class="modal-overlay" onclick="closeModal('modal-upload')"></span>
+    <div class="modal-container">
+        <div class="modal-header">
+            <div class="modal-title h5">Partager une photo</div>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label" for="upload-select-team">Sélectionnez votre équipe</label>
+                <select class="form-select" id="upload-select-team" name="team">
+                    {% for team in battle.teams.all %}
+                    <option value="{{ team.id }}">{{ team.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="upload-input-image">Sélectionnez une image</label>
+                <input class="form-input" id="upload-input-image" type="file" name="image" accept=".jpg,.jpeg,.png,.gif,.tiff" />
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" id="btn-upload-submit">Envoyer</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="modal-progress">
+    <span class="modal-overlay"></span>
+    <div class="modal-container">
+        <div class="modal-header">
+            <div class="modal-title h5">Téléversement en cours…</div>
+            <div class="modal-subtitle" id="modal-progress-label"></div>
+        </div>
+        <div class="modal-body">
+            <progress class="progress" id="modal-progress-progress" value="0" max="3"></progress>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="modal-vote-team">
+    <span class="modal-overlay" onclick="closeModal('modal-vote-team')"></span>
+    <div class="modal-container">
+        <div class="modal-header">
+            <div class="modal-title h5">Sélectionnez votre équipe</div>
+        </div>
+        <div class="modal-body">
+            {% for team in battle.teams.all %}
+            <button class="btn modal-vote-team-button" team="{{ team.id }}">{{ team.name }}</button>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="modal modal-xl" id="modal-vote-rank">
+    <input hidden id="modal-vote-rank-team" name="team" value="" />
+    <span class="modal-overlay" onclick="closeModal('modal-vote-rank')"></span>
+    <div class="modal-container">
+        <div class="modal-header">
+            <div class="modal-title h5">Classez les photos par ordre de préférence</div>
+            <div class="modal-subtitle">En premier (en haut à gauche) celle que vous aimez le moins, en dernier (en bas à droite) celle que vous aimez le plus</div>
+        </div>
+        <div class="modal-body">
+            <div>
+            {% for photo in battle.photos_shuffled %}
+            <span class="photo-wrapper" draggable team="{{ photo.team.id }}" photo="{{ photo.id }}"><a href="{{ photo.url }}"><img src="{{ photo.url_thumbnail }}" /></a></span>
+            {% endfor %}
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" id="modal-vote-rank-button">Voter</button>
+        </div>
+    </div>
+</div>
+
+{% endblock main_content %}
+
+{% block body_scripts %}
+<script>
+const API_URL = "{% url 'photobattle:api' %}";
+const BATTLE_ID = "{{ battle.id }}";
+const CSRF_TOKEN = "{{ csrf_token }}";
+{% if battle.state == 'U' %}const IMGBB_APIKEY = "{{ imgbb_apikey }}";{% endif %}
+</script>
+<script src="{% static 'photobattle/battle.js' %}"></script>
+{% comment %}
+<script>
+    var elem = document.querySelector(".grid");
+    var msnry = new Masonry(elem, {
+        itemSelector: ".grid-item",
+        columnWidth: 200
+    });
+    var msnry = new Masonry(".grid", {});
+</script>
+{% endcomment %}
+{% endblock body_scripts %}

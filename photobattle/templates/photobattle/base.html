@@ -1,0 +1,55 @@
+{% load static %}
+
+<!DOCTYPE html>
+
+<html lang="fr">
+
+<head>
+    <title>{% block title %}Joutes photographiques{% endblock title %}</title>
+    {% block head %}
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/ychalier/pifekit/pifekit.min.css" />
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/ychalier/pifekit/pifekit.min.js"></script>
+    <link rel="stylesheet" href="{% static 'photobattle/style.css' %}" />
+    {% endblock head %}
+</head>
+
+<body class="dark-blue noise">
+    {% block body %}
+    <div class="columns">
+        <div class="column col-4 col-xl-3 col-lg-2 hide-md"></div>
+        <div class="column col-4 col-xl-6 col-lg-8 col-md-12 col-sm-12 col-xs-12">
+        {% block center_column %}
+                {% comment %}
+                <header class="navbar navbar-float container">
+                    <section class="navbar-section">
+                        <a href="{% url 'photobattle:landing' %}" class="navbar-brand mr-2">Joutes photographiques</a>
+                    </section>
+                    {% if request.user.is_authenticated %}
+                    <section class="navbar-section">
+                        <a href="{% url 'photobattle:view_profile' %}" class="btn btn-link" title="Vos défis"><i class="icon icon-people"></i></a>
+                    </section>
+                    {% endif %}
+                </header>
+                {% endcomment %}
+                <div>{% block main_content %}{% endblock main_content %}</div>
+        {% endblock center_column %}
+        </div>
+        <div class="column col-4 col-xl-3 col-lg-2 col-md-12 col-sm-12 col-xs-12 p-relative"><div class="hide-md" style="height: 4.2rem"></div>{% block right_column %}{% endblock right_column %}</div>
+    </div>
+    <footer class="columns mb-4">
+        <div class="column col-4 col-xl-6 col-lg-8 col-md-12 col-sm-12 col-xs-12 container">
+            <hr>
+            Développé et maintenu par <a href="https://chalier.fr/">Yohan Chalier</a>
+            {% if request.user.is_authenticated %}
+             &mid; 
+            <a href="{% url 'photobattle:view_profile' %}" title="Vos concours"><i class="icon icon-people"></i> Vos concours</a>
+            {% endif %}
+        </div>
+    </footer>
+    {% endblock body %}
+    {% block body_scripts %}{% endblock body_scripts %}
+</body>
+
+</html>
